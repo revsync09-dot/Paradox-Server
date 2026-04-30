@@ -17,7 +17,7 @@ VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', 0))
 HELPER_CHANNEL_ID = int(os.getenv('HELPER_CHANNEL_ID', 0))
 
 # Supabase Setup
-SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_URL = os.getenv('SUPABASE_URL', '').replace('/rest/v1/', '')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 supabase: Client = None
@@ -25,41 +25,48 @@ if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url":
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class Emojis:
+    def _get(key, default):
+        val = os.getenv(f'EMOJI_{key}', default)
+        # If it's a raw ID (digits only), wrap it in Discord emoji format
+        if val and val.isdigit():
+            return f"<:emoji:{val}>"
+        return val
+
     # Core Emojis
-    CARRY = os.getenv('EMOJI_CARRY', "⚔️")
-    VOUCH = os.getenv('EMOJI_VOUCH', "⭐")
-    STAFF = os.getenv('EMOJI_STAFF', "🛡️")
-    TICKET = os.getenv('EMOJI_TICKET', "🎫")
-    SUCCESS = os.getenv('EMOJI_SUCCESS', "✅")
-    WAITING = os.getenv('EMOJI_WAITING', "⏳")
-    GAME = os.getenv('EMOJI_GAME', "🎮")
-    USER = os.getenv('EMOJI_USER', "👤")
-    INFO = os.getenv('EMOJI_INFO', "ℹ️")
-    ARROW = os.getenv('EMOJI_ARROW', "➔")
-    LOCK = os.getenv('EMOJI_LOCK', "🔒")
+    CARRY = _get('CARRY', "⚔️")
+    VOUCH = _get('VOUCH', "⭐")
+    STAFF = _get('STAFF', "🛡️")
+    TICKET = _get('TICKET', "🎫")
+    SUCCESS = _get('SUCCESS', "✅")
+    WAITING = _get('WAITING', "⏳")
+    GAME = _get('GAME', "🎮")
+    USER = _get('USER', "👤")
+    INFO = _get('INFO', "ℹ️")
+    ARROW = _get('ARROW', "➔")
+    LOCK = _get('LOCK', "🔒")
 
     # Game Emojis
-    ALS = os.getenv('EMOJI_ALS', "⚔️")
-    AG = os.getenv('EMOJI_AG', "👻")
-    AC = os.getenv('EMOJI_AC', "🗡️")
-    UTD = os.getenv('EMOJI_UTD', "🌍")
-    AV = os.getenv('EMOJI_AV', "🛡️")
-    BL = os.getenv('EMOJI_BL', "💫")
-    SP = os.getenv('EMOJI_SP', "⛵")
-    ARX = os.getenv('EMOJI_ARX', "🔥")
-    ASTD = os.getenv('EMOJI_ASTD', "⭐")
-    AOL = os.getenv('EMOJI_AOL', "👑")
+    ALS = _get('ALS', "⚔️")
+    AG = _get('AG', "👻")
+    AC = _get('AC', "🗡️")
+    UTD = _get('UTD', "🌍")
+    AV = _get('AV', "🛡️")
+    BL = _get('BL', "💫")
+    SP = _get('SP', "⛵")
+    ARX = _get('ARX', "🔥")
+    ASTD = _get('ASTD', "⭐")
+    AOL = _get('AOL', "👑")
 
     # Ticket Control Emojis
-    CLAIM = os.getenv('EMOJI_CLAIM', "✅")
-    UNCLAIM = os.getenv('EMOJI_UNCLAIM', "🔄")
-    REMIND = os.getenv('EMOJI_REMIND', "🔔")
-    COMPLETE = os.getenv('EMOJI_COMPLETE', "✅")
-    LINK = os.getenv('EMOJI_LINK', "🔗")
-    PLUS = os.getenv('EMOJI_PLUS', "➕")
-    DIAMOND = os.getenv('EMOJI_DIAMOND', "💎")
-    GOAL = os.getenv('EMOJI_GOAL', "🎯")
-    STATUS = os.getenv('EMOJI_STATUS', "📊")
+    CLAIM = _get('CLAIM', "✅")
+    UNCLAIM = _get('UNCLAIM', "🔄")
+    REMIND = _get('REMIND', "🔔")
+    COMPLETE = _get('COMPLETE', "✅")
+    LINK = _get('LINK', "🔗")
+    PLUS = _get('PLUS', "➕")
+    DIAMOND = _get('DIAMOND', "💎")
+    GOAL = _get('GOAL', "🎯")
+    STATUS = _get('STATUS', "📊")
 
 class TicketControlView(discord.ui.View):
     def __init__(self, user_id: int, game: str):
