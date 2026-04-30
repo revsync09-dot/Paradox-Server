@@ -29,7 +29,8 @@ class Emojis:
         val = os.getenv(f'EMOJI_{key}', default)
         # If it's a raw ID (digits only), wrap it in Discord emoji format
         if val and val.isdigit():
-            return f"<:emoji:{val}>"
+            # Using 'p' as a generic name (Discord usually ignores the name for IDs it knows)
+            return f"<:p:{val}>"
         return val
 
     # Core Emojis
@@ -408,6 +409,7 @@ async def setup(ctx):
     file = None
     if os.path.exists("assets/setup_header.png"):
         file = discord.File("assets/setup_header.png", filename="header.png")
+        embed.set_image(url="attachment://header.png")
 
     embed = V2Embed()
     
