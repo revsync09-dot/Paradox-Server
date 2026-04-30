@@ -50,34 +50,64 @@ class Emojis:
     ASTD = os.getenv('EMOJI_ASTD', "⭐")
     AOL = os.getenv('EMOJI_AOL', "👑")
 
+    # Ticket Control Emojis
+    CLAIM = os.getenv('EMOJI_CLAIM', "✅")
+    UNCLAIM = os.getenv('EMOJI_UNCLAIM', "🔄")
+    REMIND = os.getenv('EMOJI_REMIND', "🔔")
+    COMPLETE = os.getenv('EMOJI_COMPLETE', "✅")
+    LINK = os.getenv('EMOJI_LINK', "🔗")
+    PLUS = os.getenv('EMOJI_PLUS', "➕")
+    DIAMOND = os.getenv('EMOJI_DIAMOND', "💎")
+    GOAL = os.getenv('EMOJI_GOAL', "🎯")
+    STATUS = os.getenv('EMOJI_STATUS', "📊")
+
 class TicketControlView(discord.ui.View):
     def __init__(self, user_id: int, game: str):
         super().__init__(timeout=None)
         self.user_id = user_id
         self.game = game
-        
-        # Update button custom_ids to include state for persistence
-        for item in self.children:
-            if isinstance(item, discord.ui.Button):
-                item.custom_id = f"{item.custom_id}:{user_id}:{game}"
 
-    @discord.ui.button(label="Vouch", style=discord.ButtonStyle.green, custom_id="vouch_button")
-    async def vouch_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Update label with emoji
-        button.label = f"{Emojis.SUCCESS} Vouch"
-        # Parse state from custom_id if needed (for persistent view registration)
-        _, user_id, game = interaction.data['custom_id'].split(':')
-        user_id = int(user_id)
-        
-        if interaction.user.id == user_id:
-            await interaction.response.send_message(
-                "❌ You can't vouch for yourself!",
-                ephemeral=True
-            )
-            return
+    @discord.ui.button(label="Claim", style=discord.ButtonStyle.green, custom_id="claim_button")
+    async def claim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        staff = interaction.user
+        embed = interaction.message.embeds[0]
+        # Update Status field
+        embed.set_field_at(3, name=f"{Emojis.STATUS} Status", value=f"🟢 **Claimed by {staff.mention}**", inline=False)
+        await interaction.response.edit_message(embed=embed)
 
-        # Record the vouch in Supabase
+    @discord.ui.button(label="Unclaim", style=discord.ButtonStyle.blurple, custom_id="unclaim_button")
+    async def unclaim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = interaction.message.embeds[0]
+        embed.set_field_at(3, name=f"{Emojis.STATUS} Status", value=f"🟡 **Waiting for claim**", inline=False)
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label="Close Request", style=discord.ButtonStyle.red, custom_id="close_button")
+    async def close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.channel.delete()
+
+    @discord.ui.button(label="Remind User", style=discord.ButtonStyle.secondary, custom_id="remind_button")
+    async def remind_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(f"🔔 {interaction.user.mention} is waiting for you!", ephemeral=False)
+
+    @discord.ui.button(label="Complete Run", style=discord.ButtonStyle.green, custom_id="complete_button")
+    async def complete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Logic for finishing the run
+        embed = interaction.message.embeds[0]
+        embed.set_field_at(3, name=f"{Emojis.STATUS} Status", value=f"✅ **Run Completed**", inline=False)
+        
+        # Add Vouch button to this specific message
+        view = discord.ui.View()
+        vouch_btn = discord.ui.Button(label="Vouch Booster", style=discord.ButtonStyle.green, custom_id=f"vouch:{self.user_id}:{self.game}")
+        vouch_btn.callback = self.vouch_callback
+        view.add_item(vouch_btn)
+        
+        await interaction.response.edit_message(embed=embed, view=view)
+
+    async def vouch_callback(self, interaction: discord.Interaction):
+        # Reuse existing vouch logic
         booster = interaction.user
+        game = self.game
+        user_id = self.user_id
         
         if supabase:
             try:
@@ -90,53 +120,82 @@ class TicketControlView(discord.ui.View):
             except Exception as e:
                 print(f"Error saving to Supabase: {e}")
 
-        # Response message
-        response_embed = discord.Embed(
-            title="⭐ Vouch Recorded!",
-            color=0x7289DA,
-            description=f"Great work, {booster.mention}!"
-        )
-        response_embed.add_field(
-            name="👤 Booster",
-            value=booster.mention,
-            inline=True
-        )
-        response_embed.add_field(
-            name="🎮 Game",
-            value=game,
-            inline=True
-        )
-        response_embed.add_field(
-            name="⭐ Total Vouches",
-            value=f"**{len(vouches[booster.id])}**",
-            inline=True
-        )
-        response_embed.set_footer(text="This vouch is visible on the booster's profile!")
-        
-        await interaction.response.send_message(embed=response_embed, ephemeral=False)
-
-        # Post to vouch channel if configured
+        # Post to vouch channel
         if VOUCH_CHANNEL_ID != 0:
             vouch_channel = interaction.guild.get_channel(VOUCH_CHANNEL_ID)
             if vouch_channel:
-                # Get total vouches from Supabase
                 total_vouches = 0
                 if supabase:
                     res = supabase.table("vouches").select("id", count="exact").eq("booster_id", str(booster.id)).execute()
                     total_vouches = res.count if res.count is not None else 0
                 
-                # Generate Canvas Image
-                img_data = await create_vouch_card(
-                    booster.name, 
-                    game, 
-                    total_vouches, 
-                    booster.display_avatar.url
-                )
-                
+                img_data = await create_vouch_card(booster.name, game, total_vouches, booster.display_avatar.url)
                 file = discord.File(img_data, filename="vouch.png")
-                
-                # Send ONLY the PNG
                 await vouch_channel.send(file=file)
+        
+        await interaction.response.send_message(f"{Emojis.SUCCESS} Vouch registered!", ephemeral=True)
+                
+class JoinMethodView(discord.ui.View):
+    def __init__(self, game_id: str, game_name: str):
+        super().__init__(timeout=60)
+        self.game_id = game_id
+        self.game_name = game_name
+
+    @discord.ui.button(label="Join by Links", style=discord.ButtonStyle.green, custom_id="join_links")
+    async def join_links(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button.label = f"{Emojis.LINK} Join by Links"
+        await self.create_ticket(interaction, "Join by Links")
+
+    @discord.ui.button(label="Add Helper", style=discord.ButtonStyle.blurple, custom_id="add_helper")
+    async def add_helper(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button.label = f"{Emojis.PLUS} Add Helper"
+        await self.create_ticket(interaction, "Add Helper")
+
+    @discord.ui.button(label="Trade Coming Soon", style=discord.ButtonStyle.gray, custom_id="trade_soon", disabled=True)
+    async def trade_soon(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button.label = f"{Emojis.DIAMOND} Trade Coming Soon"
+
+    async def create_ticket(self, interaction: discord.Interaction, method: str):
+        guild = interaction.guild
+        user = interaction.user
+        category = guild.get_channel(CATEGORY_ID)
+        staff_role = guild.get_role(STAFF_ROLE_ID)
+
+        if not category:
+            await interaction.response.send_message("❌ Category not configured.", ephemeral=True)
+            return
+
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+        }
+        if staff_role:
+            overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+
+        ticket_num = datetime.now().strftime("%H%M") 
+        
+        channel = await guild.create_text_channel(
+            name=f"{self.game_id}-{user.name}",
+            category=category,
+            overwrites=overwrites
+        )
+
+        await interaction.response.send_message(f"✅ Ticket created: {channel.mention}", ephemeral=True)
+
+        embed = V2Embed(
+            title=f"{Emojis.TICKET} Ticket #{ticket_num}",
+            description=f"{user.mention} — **Your carry request is active!**"
+        )
+        
+        embed.add_field(name=f"{Emojis.GAME} Gamemode", value=f"```\n{self.game_name}\n```", inline=False)
+        embed.add_field(name=f"{Emojis.GOAL} Goal", value="```\nWaiting for details...\n```", inline=False)
+        embed.add_field(name=f"{Emojis.LINK} Join via Link?", value=f"```\n{method}\n```", inline=False)
+        embed.add_field(name=f"{Emojis.STATUS} Status", value=f"🟡 **Waiting for claim**", inline=False)
+        
+        embed.set_footer(text="PARADOX Carry Service • Fast & Reliable")
+        embed.set_thumbnail(url=user.display_avatar.url)
+        
+        await channel.send(content=f"{user.mention} {staff_role.mention if staff_role else ''}", embed=embed, view=TicketControlView(user.id, self.game_id))
 
     @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="close_button")
     async def close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
