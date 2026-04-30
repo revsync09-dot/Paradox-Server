@@ -45,7 +45,6 @@ class Emojis:
 
     @classmethod
     def update(cls, bot: commands.Bot):
-        # List of all emoji keys we want to load from .env
         keys = [
             'CARRY', 'VOUCH', 'STAFF', 'TICKET', 'SUCCESS', 'WAITING', 'GAME', 'USER', 'INFO', 'ARROW', 'LOCK',
             'ALS', 'AG', 'AC', 'UTD', 'AV', 'BL', 'SP', 'ARX', 'ASTD', 'AOL',
@@ -57,16 +56,13 @@ class Emojis:
             if not val:
                 continue
                 
-            # If it's a raw ID, try to get the real emoji object
             if val.isdigit():
                 emoji_obj = bot.get_emoji(int(val))
                 if emoji_obj:
                     setattr(cls, key, emoji_obj)
                 else:
-                    # Create a PartialEmoji if not in cache (name doesn't matter much)
                     setattr(cls, key, discord.PartialEmoji(name="emoji", id=int(val)))
             else:
-                # If it's already a string/emoji, use as is
                 setattr(cls, key, val)
 
 class TicketControlView(discord.ui.View):
@@ -79,7 +75,6 @@ class TicketControlView(discord.ui.View):
     async def claim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         staff = interaction.user
         embed = interaction.message.embeds[0]
-        # Update Status field
         embed.set_field_at(3, name=f"{Emojis.STATUS} Status", value=f"🟢 **Claimed by {staff.mention}**", inline=False)
         await interaction.response.edit_message(embed=embed)
 
@@ -99,11 +94,9 @@ class TicketControlView(discord.ui.View):
 
     @discord.ui.button(label="Complete Run", style=discord.ButtonStyle.green, custom_id="complete_button")
     async def complete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Logic for finishing the run
         embed = interaction.message.embeds[0]
         embed.set_field_at(3, name=f"{Emojis.STATUS} Status", value=f"✅ **Run Completed**", inline=False)
         
-        # Add Vouch button to this specific message
         view = discord.ui.View()
         vouch_btn = discord.ui.Button(label="Vouch Booster", style=discord.ButtonStyle.green, custom_id=f"vouch:{self.user_id}:{self.game}")
         vouch_btn.callback = self.vouch_callback
@@ -112,7 +105,6 @@ class TicketControlView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=view)
 
     async def vouch_callback(self, interaction: discord.Interaction):
-        # Reuse existing vouch logic
         booster = interaction.user
         game = self.game
         user_id = self.user_id
@@ -128,7 +120,6 @@ class TicketControlView(discord.ui.View):
             except Exception as e:
                 print(f"Error saving to Supabase: {e}")
 
-        # Post to vouch channel
         if VOUCH_CHANNEL_ID != 0:
             vouch_channel = interaction.guild.get_channel(VOUCH_CHANNEL_ID)
             if vouch_channel:
@@ -142,7 +133,7 @@ class TicketControlView(discord.ui.View):
                 await vouch_channel.send(file=file)
         
         await interaction.response.send_message(f"{Emojis.SUCCESS} Vouch registered!", ephemeral=True)
-                
+
 class JoinMethodView(discord.ui.View):
     def __init__(self, game_id: str, game_name: str):
         super().__init__(timeout=60)
@@ -205,206 +196,94 @@ class JoinMethodView(discord.ui.View):
         
         await channel.send(content=f"{user.mention} {staff_role.mention if staff_role else ''}", embed=embed, view=TicketControlView(user.id, self.game_id))
 
-    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="close_button")
-    async def close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Update label with emoji
-        button.label = f"{Emojis.LOCK} Close Ticket"
-        # Parse state from custom_id
-        _, user_id, game = interaction.data['custom_id'].split(':')
-        user_id = int(user_id)
-        
-        if interaction.user.id != user_id:
-            # Allow staff to close too
-            staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
-            if not (staff_role and staff_role in interaction.user.roles):
-                await interaction.response.send_message(
-                    "❌ Only the ticket creator or staff can close this ticket!",
-                    ephemeral=True
-                )
-                return
-
-        close_embed = discord.Embed(
-            title="🔒 Ticket Closed",
-            color=0x7289DA,
-            description="Thank you for using PARADOX! We hope to see you again soon."
-        )
-        close_embed.add_field(name="📋 Game", value=game, inline=True)
-        close_embed.add_field(name="⏱️ Duration", value="Closed by " + interaction.user.mention, inline=True)
-        
-        await interaction.response.send_message(embed=close_embed)
-        
-        # Delete the channel after a short delay
-        await asyncio.sleep(2)
-        await interaction.channel.delete()
-
 class ParadoxTicketView(discord.ui.View):
-    def __init__(self): 
-        super().__init__(timeout=None)  # Persistent view for 24/7 operation
-
-    @discord.ui.select(
-        custom_id="paradox_selector",
-        placeholder="Select a game to start your ticket!",
-        options=[
-            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ARROW, value="ALS"),
-            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.ARROW, value="AG"),
-            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.ARROW, value="AC"),
-            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.ARROW, value="UTD"),
-            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.ARROW, value="AV"),
-            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.ARROW, value="BL"),
-            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.ARROW, value="SP"),
-            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARROW, value="ARX"),
-            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ARROW, value="ASTD"),
-            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.ARROW, value="AOL"),
+    def __init__(self):
+        super().__init__(timeout=None)
+        options = [
+            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ALS, value="ALS"),
+            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.AG, value="AG"),
+            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.AC, value="AC"),
+            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.UTD, value="UTD"),
+            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.AV, value="AV"),
+            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.BL, value="BL"),
+            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.SP, value="SP"),
+            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARX, value="ARX"),
+            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ASTD, value="ASTD"),
+            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.AOL, value="AOL"),
         ]
-    )
-    async def callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        guild = interaction.guild
-        user = interaction.user
-        category = guild.get_channel(CATEGORY_ID)
-        staff_role = guild.get_role(STAFF_ROLE_ID)
+        self.select = discord.ui.Select(
+            custom_id="paradox_selector",
+            placeholder="Select a game to start your ticket!",
+            options=options
+        )
+        self.select.callback = self.select_callback
+        self.add_item(self.select)
 
-        if not category:
-            await interaction.response.send_message(
-                "❌ Category not configured. Contact an admin.",
-                ephemeral=True
-            )
+    async def select_callback(self, interaction: discord.Interaction):
+        game_id = self.select.values[0]
+        game_name = [opt.label for opt in self.select.options if opt.value == game_id][0]
+        if CATEGORY_ID == 0:
+            await interaction.response.send_message("❌ Category not configured.", ephemeral=True)
             return
-
-        # Create private channel permissions
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-        }
-
-        if staff_role:
-            overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-
-        channel = await guild.create_text_channel(
-            name=f"carry-{select.values[0]}-{user.name}",
-            category=category,
-            overwrites=overwrites
+        embed = V2Embed(
+            title=f"{Emojis.LINK} Select Joining Method",
+            description=f"How would you like to join the helper?\n\n**Game:** `{game_name}`\n**Gamemode:** `{game_name}`\n\nPick an option below to create your ticket."
         )
-
-        await interaction.response.send_message(
-            f"✅ Ticket created: {channel.mention}",
-            ephemeral=True
-        )
-
-        # Welcome embed inside the ticket
-        embed = discord.Embed(
-            title="⚔️ PARADOX | Carry Service",
-            color=0x7289DA,
-            description=f"Welcome {user.mention}! A professional booster will help you shortly."
-        )
-        
-        game_emojis = {"ALS": "⚔️", "AV": "🛡️", "ASTD": "⭐"}
-        game_names = {"ALS": "Anime Last Stand", "AV": "Anime Vanguards", "ASTD": "All Star Tower Defense"}
-        selected_game = select.values[0]
-        
-        embed.add_field(
-            name=f"{game_emojis.get(selected_game, '✨')} Service Type",
-            value=game_names.get(selected_game, selected_game),
-            inline=False
-        )
-        embed.add_field(
-            name="👤 Customer",
-            value=user.mention,
-            inline=True
-        )
-        embed.add_field(
-            name="⏱️ Status",
-            value="🟢 Awaiting Booster",
-            inline=True
-        )
-        
-        embed.set_footer(text="React with ⭐ to vouch when complete!")
-        embed.set_thumbnail(url=user.display_avatar.url)
-        
-        await channel.send(embed=embed, view=TicketControlView(user.id, select.values[0]))
-
+        await interaction.response.send_message(embed=embed, view=JoinMethodView(game_id, game_name), ephemeral=True)
 
 class HelperApplicationView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-
-    @discord.ui.select(
-        custom_id="helper_selector",
-        placeholder="Select your specialty!",
-        options=[
-            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ARROW, value="ALS"),
-            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.ARROW, value="AG"),
-            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.ARROW, value="AC"),
-            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.ARROW, value="UTD"),
-            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.ARROW, value="AV"),
-            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.ARROW, value="BL"),
-            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.ARROW, value="SP"),
-            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARROW, value="ARX"),
-            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ARROW, value="ASTD"),
-            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.ARROW, value="AOL"),
+        options = [
+            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ALS, value="ALS"),
+            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.AG, value="AG"),
+            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.AC, value="AC"),
+            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.UTD, value="UTD"),
+            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.AV, value="AV"),
+            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.BL, value="BL"),
+            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.SP, value="SP"),
+            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARX, value="ARX"),
+            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ASTD, value="ASTD"),
+            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.AOL, value="AOL"),
         ]
-    )
-    async def callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        user = interaction.user
-        specialty = select.values[0]
-        
-        # Game names mapping
-        game_names = {
-            "ALS": "Anime Last Stand",
-            "AG": "Anime Guardians",
-            "AC": "Anime Crusaders",
-            "UTD": "Universal Tower Defense",
-            "AV": "Anime Vanguards",
-            "BL": "Bizarre Lineage",
-            "SP": "Sailor Piece",
-            "ARX": "Anime Rangers X",
-            "ASTD": "All Star Tower Defense",
-            "AOL": "Anime Overload"
-        }
-        
-        # Create application embed
-        embed = V2Embed(
-            title=f"{Emojis.SUCCESS} Application Submitted",
-            description=f"Thank you for applying, {user.mention}!\nOur team will review your specialty in **{game_names.get(specialty, specialty)}**."
+        self.select = discord.ui.Select(
+            custom_id="helper_selector",
+            placeholder="Select your specialty!",
+            options=options
         )
-        
-        embed.add_field(name=f"{Emojis.USER} Applicant", value=user.mention, inline=True)
-        embed.add_field(name=f"{Emojis.GAME} Specialty", value=game_names.get(specialty, specialty), inline=True)
-        embed.add_field(name=f"{Emojis.WAITING} Status", value="Pending Review", inline=True)
-        
-        embed.set_footer(text="Staff Review System • PARADOX", icon_url=user.display_avatar.url)
-        embed.set_thumbnail(url=user.display_avatar.url)
-        
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        self.select.callback = self.select_callback
+        self.add_item(self.select)
 
+    async def select_callback(self, interaction: discord.Interaction):
+        game_id = self.select.values[0]
+        game_name = [opt.label for opt in self.select.options if opt.value == game_id][0]
+        embed = V2Embed(
+            title=f"{Emojis.STAFF} Helper Application",
+            description=f"You are applying for the position of **{game_name} Helper**.\n\nPlease answer the questions below to proceed."
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 class ParadoxBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
-        intents.message_content = True  # REQUIRED for !setup to work
+        intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        # Keeps the dropdown working after restarts
         self.add_view(ParadoxTicketView())
         self.add_view(HelperApplicationView())
 
     async def on_ready(self):
-        # Resolve custom emojis from cache
         Emojis.update(self)
         print(f"BOT LOGGED IN AS {self.user}")
-        print(f"Custom emojis resolved from cache.")
         print(f"Active category: {CATEGORY_ID}")
 
-
 bot = ParadoxBot()
-
 
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def setup(ctx):
-    """Creates the carry request system embed"""
     embed = V2Embed()
-    
     file = None
     if os.path.exists("assets/setup_header.png"):
         file = discord.File("assets/setup_header.png", filename="header.png")
@@ -417,97 +296,95 @@ async def setup(ctx):
         f"**| Welcome to the Elite Carry Service!**\n"
         f"**| Your place for fast and professional carries.**\n\n"
         f"**| {Emojis.GAME} Supported Games**\n"
-        "```diff\n"
-        "+ Anime Last Stand (ALS)\n"
-        "+ Anime Vanguards (AV)\n"
-        "+ All Star Tower Defense (ASTD)\n"
-        "+ Anime Rangers X (ARX)\n"
-        "+ and many more...\n"
-        "```\n"
+        f"```diff\n"
+        f"+ Anime Last Stand (ALS)\n"
+        f"+ Anime Vanguards (AV)\n"
+        f"+ All Star Tower Defense (ASTD)\n"
+        f"+ Anime Rangers X (ARX)\n"
+        f"+ and many more...\n"
+        f"```\n"
         f"**| {Emojis.ARROW} How to start?**\n"
         f"**| Select your game from the menu below!**\n\n"
-        f"**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**"
+        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
     )
-    
     embed.set_footer(text="Paradox System • Premium Edition", icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
     
-    if file:
-        await ctx.send(file=file, embed=embed, view=ParadoxTicketView())
-    else:
-        await ctx.send(embed=embed, view=ParadoxTicketView())
-
+    await ctx.send(file=file if file else None, embed=embed, view=ParadoxTicketView())
 
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def helper_setup(ctx):
-    """Creates the helper application system embed"""
     embed = V2Embed()
+    file = None
+    if os.path.exists("assets/setup_header.png"):
+        file = discord.File("assets/setup_header.png", filename="header.png")
+        embed.set_image(url="attachment://header.png")
     
     embed.description = (
         f"**@everyone**\n\n"
         f"**{Emojis.STAFF} [ HELPER APPLICATIONS ]**\n\n"
-        f"**| {Emojis.INFO} Requirements**\n"
-        f"**| Must have meta units and high activity.**\n"
-        f"**| Polite and professional attitude is required.**\n\n"
-        f"**| {Emojis.SUCCESS} Benefits**\n"
-        "```diff\n"
-        "+ Gain community trust\n"
-        "+ Build your reputation\n"
-        "+ Access to exclusive staff channels\n"
-        "+ Rank up in the Hall of Fame\n"
-        "```\n"
+        f"**| {Emojis.INFO} Information**\n"
+        f"**| Interested in joining our Elite Staff?**\n"
+        f"**| We are looking for professional carriers!**\n\n"
         f"**| {Emojis.ARROW} How to apply?**\n"
-        f"**| Select your specialty from the menu below!**\n\n"
-        f"**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**"
+        f"**| Select your main game below and answer the**\n"
+        f"**| questions in the modal that appears.**\n\n"
+        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
     )
+    embed.set_footer(text="Paradox System • Premium Edition", icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
     
-    embed.set_footer(text="Paradox Recruitment • Apply Now")
-    
-    await ctx.send(embed=embed, view=HelperApplicationView())
-
+    await ctx.send(file=file if file else None, embed=embed, view=HelperApplicationView())
 
 @bot.command()
-async def vouches(ctx, user: discord.User = None):
-    """Check vouches for a booster"""
-    target = user or ctx.author
-    
+async def vouch(ctx, target: discord.Member, game: str):
+    if target.id == ctx.author.id:
+        await ctx.send("❌ You can't vouch for yourself!")
+        return
+    if supabase:
+        try:
+            supabase.table("vouches").insert({
+                "booster_id": str(target.id),
+                "customer_id": str(ctx.author.id),
+                "game": game,
+                "booster_name": target.name
+            }).execute()
+            
+            res = supabase.table("vouches").select("id", count="exact").eq("booster_id", str(target.id)).execute()
+            total_vouches = res.count if res.count is not None else 0
+            
+            img_data = await create_vouch_card(target.name, game, total_vouches, target.display_avatar.url)
+            file = discord.File(img_data, filename="vouch.png")
+            await ctx.send(file=file)
+        except Exception as e:
+            print(f"Vouch error: {e}")
+            await ctx.send("❌ Database error.")
+
+@bot.command()
+async def profile(ctx, target: discord.Member = None):
+    target = target or ctx.author
     total_vouches = 0
     game_count = {}
-    
     if supabase:
         try:
             res = supabase.table("vouches").select("*").eq("booster_id", str(target.id)).execute()
             vouch_list = res.data
             total_vouches = len(vouch_list)
-            
             for vouch in vouch_list:
-                game = vouch["game"]
-                game_count[game] = game_count.get(game, 0) + 1
+                g = vouch["game"]
+                game_count[g] = game_count.get(g, 0) + 1
         except Exception as e:
-            print(f"Supabase error: {e}")
-            await ctx.send("❌ Error fetching vouches from database.")
+            print(f"Profile error: {e}")
+            await ctx.send("❌ Database error.")
             return
 
     if total_vouches == 0:
-        embed = V2Embed(
-            title=f"{Emojis.VOUCH} Booster Profile",
-            description=f"**{target.name}** hasn't earned any vouches yet! 🌱"
-        )
-        embed.set_thumbnail(url=target.display_avatar.url)
-        await ctx.send(embed=embed)
+        await ctx.send(f"**{target.name}** hasn't earned any vouches yet!")
         return
     
-    # Generate the modern PNG profile card
     async with ctx.typing():
-        img_data = await create_profile_card(
-            target.name,
-            total_vouches,
-            game_count,
-            target.display_avatar.url
-        )
+        img_data = await create_profile_card(target.name, total_vouches, game_count, target.display_avatar.url)
         file = discord.File(img_data, filename="profile.png")
         await ctx.send(file=file)
-
 
 if __name__ == "__main__":
     if not TOKEN:
