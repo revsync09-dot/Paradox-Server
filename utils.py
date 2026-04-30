@@ -46,6 +46,20 @@ async def create_vouch_card(booster_name, game_name, total_vouches, avatar_url):
 
     draw.text((260, 120), booster_name, font=title_font, fill=(255, 255, 255))
     draw.text((260, 180), f"Game: {game_name}", font=sub_font, fill=(200, 200, 200))
+    
+    # Calculate Rank Title
+    rank_title = "🌱 Novice"
+    if total_vouches >= 500: rank_title = "🌟 Hall of Fame"
+    elif total_vouches >= 250: rank_title = "🏆 Legendary"
+    elif total_vouches >= 100: rank_title = "👑 Elite Carrier"
+    elif total_vouches >= 50: rank_title = "💎 Veteran"
+    elif total_vouches >= 25: rank_title = "🔥 Trusted Booster"
+    elif total_vouches >= 10: rank_title = "⭐ Rising Star"
+    elif total_vouches >= 1: rank_title = "🌱 First Steps"
+    
+    draw.text((260, 230), rank_title, font=sub_font, fill=(0, 255, 127))
+    
+    # Stats Section
     draw.text((550, 120), "VOUCHES", font=sub_font, fill=(114, 137, 218))
     w = draw.textlength(str(total_vouches), font=stat_font)
     draw.text((550 + (150 - w)//2, 170), str(total_vouches), font=stat_font, fill=(255, 215, 0))
