@@ -25,17 +25,51 @@ if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url":
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class Emojis:
-    # Loaded from .env
-    CARRY = os.getenv('EMOJI_CARRY', "⚔️")
-    VOUCH = os.getenv('EMOJI_VOUCH', "⭐")
-    STAFF = os.getenv('EMOJI_STAFF', "🛡️")
-    TICKET = os.getenv('EMOJI_TICKET', "🎫")
-    SUCCESS = os.getenv('EMOJI_SUCCESS', "✅")
-    WAITING = os.getenv('EMOJI_WAITING', "⏳")
-    GAME = os.getenv('EMOJI_GAME', "🎮")
-    USER = os.getenv('EMOJI_USER', "👤")
-    INFO = os.getenv('EMOJI_INFO', "ℹ️")
-    ARROW = os.getenv('EMOJI_ARROW', "➔")
+    # Defaults (Unicode)
+    CARRY = "⚔️"
+    VOUCH = "⭐"
+    STAFF = "🛡️"
+    TICKET = "🎫"
+    SUCCESS = "✅"
+    WAITING = "⏳"
+    GAME = "🎮"
+    USER = "👤"
+    INFO = "ℹ️"
+    ARROW = "➔"
+
+    @classmethod
+    def update(cls, bot: commands.Bot):
+        # Guild IDs provided by user
+        GUILD_IDS = [1422969507734884374, 1466513219530129543, 1221981190777471097]
+        
+        # Mapping emoji names to class attributes
+        mapping = {
+            "carry": "CARRY",
+            "vouch": "VOUCH",
+            "staff": "STAFF",
+            "ticket": "TICKET",
+            "success": "SUCCESS",
+            "waiting": "WAITING",
+            "game": "GAME",
+            "user": "USER",
+            "info": "INFO",
+            "arrow": "ARROW"
+        }
+
+        # Try to find emojis in the specified guilds
+        for guild_id in GUILD_IDS:
+            guild = bot.get_guild(guild_id)
+            if guild:
+                for emoji in guild.emojis:
+                    attr_name = mapping.get(emoji.name.lower())
+                    if attr_name:
+                        setattr(cls, attr_name, str(emoji))
+        
+        # Finally, override with .env if specified (highest priority)
+        for name, attr in mapping.items():
+            env_val = os.getenv(f'EMOJI_{attr}')
+            if env_val:
+                setattr(cls, attr, env_val)
 
 class TicketControlView(discord.ui.View):
     def __init__(self, user_id: int, game: str):
@@ -306,6 +340,9 @@ class ParadoxBot(commands.Bot):
 
     async def on_ready(self):
         print(f"✅ Bot logged in as {self.user}")
+        # Resolve custom emojis
+        Emojis.update(self)
+        print("✨ Custom emojis resolved.")
 
 
 bot = ParadoxBot()
