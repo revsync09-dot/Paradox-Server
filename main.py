@@ -16,6 +16,9 @@ STAFF_ROLE_ID = int(os.getenv('STAFF_ROLE_ID', 0))
 VOUCH_CHANNEL_ID = int(os.getenv('VOUCH_CHANNEL_ID', 0))
 HELPER_CHANNEL_ID = int(os.getenv('HELPER_CHANNEL_ID', 0))
 
+print(f"DEBUG: CATEGORY_ID={CATEGORY_ID}")
+print(f"DEBUG: STAFF_ROLE_ID={STAFF_ROLE_ID}")
+
 # Supabase Setup
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').replace('/rest/v1/', '')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
@@ -54,14 +57,14 @@ class Emojis:
             if not val:
                 continue
                 
-            # If it's a raw ID, try to get the real emoji object from bot cache
+            # If it's a raw ID, try to get the real emoji object
             if val.isdigit():
                 emoji_obj = bot.get_emoji(int(val))
                 if emoji_obj:
-                    setattr(cls, key, str(emoji_obj))
+                    setattr(cls, key, emoji_obj)
                 else:
-                    # Fallback to standard format if not in cache yet
-                    setattr(cls, key, f"<:p:{val}>")
+                    # Create a PartialEmoji if not in cache (name doesn't matter much)
+                    setattr(cls, key, discord.PartialEmoji(name="emoji", id=int(val)))
             else:
                 # If it's already a string/emoji, use as is
                 setattr(cls, key, val)
@@ -388,8 +391,9 @@ class ParadoxBot(commands.Bot):
     async def on_ready(self):
         # Resolve custom emojis from cache
         Emojis.update(self)
-        print(f"Bot logged in as {self.user}")
-        print("Custom emojis resolved from cache.")
+        print(f"BOT LOGGED IN AS {self.user}")
+        print(f"Custom emojis resolved from cache.")
+        print(f"Active category: {CATEGORY_ID}")
 
 
 bot = ParadoxBot()
