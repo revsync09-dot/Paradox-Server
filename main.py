@@ -25,49 +25,46 @@ if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url":
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class Emojis:
-    def _get(key, default):
-        val = os.getenv(f'EMOJI_{key}', default)
-        # If it's a raw ID (digits only), wrap it in Discord emoji format
-        if val and val.isdigit():
-            # Using 'p' as a generic name (Discord usually ignores the name for IDs it knows)
-            return f"<:p:{val}>"
-        return val
+    # Defaults
+    CARRY = "⚔️"
+    VOUCH = "⭐"
+    STAFF = "🛡️"
+    TICKET = "🎫"
+    SUCCESS = "✅"
+    WAITING = "⏳"
+    GAME = "🎮"
+    USER = "👤"
+    INFO = "ℹ️"
+    ARROW = "➔"
+    LOCK = "🔒"
+    ALS = AG = AC = UTD = AV = BL = SP = ARX = ASTD = AOL = "🎮"
+    CLAIM = UNCLAIM = REMIND = COMPLETE = LINK = PLUS = DIAMOND = GOAL = STATUS = "🔹"
 
-    # Core Emojis
-    CARRY = _get('CARRY', "⚔️")
-    VOUCH = _get('VOUCH', "⭐")
-    STAFF = _get('STAFF', "🛡️")
-    TICKET = _get('TICKET', "🎫")
-    SUCCESS = _get('SUCCESS', "✅")
-    WAITING = _get('WAITING', "⏳")
-    GAME = _get('GAME', "🎮")
-    USER = _get('USER', "👤")
-    INFO = _get('INFO', "ℹ️")
-    ARROW = _get('ARROW', "➔")
-    LOCK = _get('LOCK', "🔒")
-
-    # Game Emojis
-    ALS = _get('ALS', "⚔️")
-    AG = _get('AG', "👻")
-    AC = _get('AC', "🗡️")
-    UTD = _get('UTD', "🌍")
-    AV = _get('AV', "🛡️")
-    BL = _get('BL', "💫")
-    SP = _get('SP', "⛵")
-    ARX = _get('ARX', "🔥")
-    ASTD = _get('ASTD', "⭐")
-    AOL = _get('AOL', "👑")
-
-    # Ticket Control Emojis
-    CLAIM = _get('CLAIM', "✅")
-    UNCLAIM = _get('UNCLAIM', "🔄")
-    REMIND = _get('REMIND', "🔔")
-    COMPLETE = _get('COMPLETE', "✅")
-    LINK = _get('LINK', "🔗")
-    PLUS = _get('PLUS', "➕")
-    DIAMOND = _get('DIAMOND', "💎")
-    GOAL = _get('GOAL', "🎯")
-    STATUS = _get('STATUS', "📊")
+    @classmethod
+    def update(cls, bot: commands.Bot):
+        # List of all emoji keys we want to load from .env
+        keys = [
+            'CARRY', 'VOUCH', 'STAFF', 'TICKET', 'SUCCESS', 'WAITING', 'GAME', 'USER', 'INFO', 'ARROW', 'LOCK',
+            'ALS', 'AG', 'AC', 'UTD', 'AV', 'BL', 'SP', 'ARX', 'ASTD', 'AOL',
+            'CLAIM', 'UNCLAIM', 'REMIND', 'COMPLETE', 'LINK', 'PLUS', 'DIAMOND', 'GOAL', 'STATUS'
+        ]
+        
+        for key in keys:
+            val = os.getenv(f'EMOJI_{key}')
+            if not val:
+                continue
+                
+            # If it's a raw ID, try to get the real emoji object from bot cache
+            if val.isdigit():
+                emoji_obj = bot.get_emoji(int(val))
+                if emoji_obj:
+                    setattr(cls, key, str(emoji_obj))
+                else:
+                    # Fallback to standard format if not in cache yet
+                    setattr(cls, key, f"<:p:{val}>")
+            else:
+                # If it's already a string/emoji, use as is
+                setattr(cls, key, val)
 
 class TicketControlView(discord.ui.View):
     def __init__(self, user_id: int, game: str):
@@ -389,7 +386,10 @@ class ParadoxBot(commands.Bot):
         self.add_view(HelperApplicationView())
 
     async def on_ready(self):
-        print(f"✅ Bot logged in as {self.user}")
+        # Resolve custom emojis from cache
+        Emojis.update(self)
+        print(f"Bot logged in as {self.user}")
+        print("Custom emojis resolved from cache.")
 
 
 bot = ParadoxBot()
@@ -398,20 +398,13 @@ bot = ParadoxBot()
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def setup(ctx):
-    """Creates the ticket system embed"""
-    if CATEGORY_ID == 0 or STAFF_ROLE_ID == 0:
-        await ctx.send(
-            "❌ Bot not configured. Set CATEGORY_ID and STAFF_ROLE_ID in .env file."
-        )
-        return
-
-    # Header Image
+    """Creates the carry request system embed"""
+    embed = V2Embed()
+    
     file = None
     if os.path.exists("assets/setup_header.png"):
         file = discord.File("assets/setup_header.png", filename="header.png")
         embed.set_image(url="attachment://header.png")
-
-    embed = V2Embed()
     
     embed.description = (
         f"**@everyone**\n\n"
