@@ -25,51 +25,30 @@ if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL != "your_supabase_url":
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class Emojis:
-    # Defaults (Unicode)
-    CARRY = "⚔️"
-    VOUCH = "⭐"
-    STAFF = "🛡️"
-    TICKET = "🎫"
-    SUCCESS = "✅"
-    WAITING = "⏳"
-    GAME = "🎮"
-    USER = "👤"
-    INFO = "ℹ️"
-    ARROW = "➔"
+    # Core Emojis
+    CARRY = os.getenv('EMOJI_CARRY', "⚔️")
+    VOUCH = os.getenv('EMOJI_VOUCH', "⭐")
+    STAFF = os.getenv('EMOJI_STAFF', "🛡️")
+    TICKET = os.getenv('EMOJI_TICKET', "🎫")
+    SUCCESS = os.getenv('EMOJI_SUCCESS', "✅")
+    WAITING = os.getenv('EMOJI_WAITING', "⏳")
+    GAME = os.getenv('EMOJI_GAME', "🎮")
+    USER = os.getenv('EMOJI_USER', "👤")
+    INFO = os.getenv('EMOJI_INFO', "ℹ️")
+    ARROW = os.getenv('EMOJI_ARROW', "➔")
+    LOCK = os.getenv('EMOJI_LOCK', "🔒")
 
-    @classmethod
-    def update(cls, bot: commands.Bot):
-        # Guild IDs provided by user
-        GUILD_IDS = [1422969507734884374, 1466513219530129543, 1221981190777471097]
-        
-        # Mapping emoji names to class attributes
-        mapping = {
-            "carry": "CARRY",
-            "vouch": "VOUCH",
-            "staff": "STAFF",
-            "ticket": "TICKET",
-            "success": "SUCCESS",
-            "waiting": "WAITING",
-            "game": "GAME",
-            "user": "USER",
-            "info": "INFO",
-            "arrow": "ARROW"
-        }
-
-        # Try to find emojis in the specified guilds
-        for guild_id in GUILD_IDS:
-            guild = bot.get_guild(guild_id)
-            if guild:
-                for emoji in guild.emojis:
-                    attr_name = mapping.get(emoji.name.lower())
-                    if attr_name:
-                        setattr(cls, attr_name, str(emoji))
-        
-        # Finally, override with .env if specified (highest priority)
-        for name, attr in mapping.items():
-            env_val = os.getenv(f'EMOJI_{attr}')
-            if env_val:
-                setattr(cls, attr, env_val)
+    # Game Emojis
+    ALS = os.getenv('EMOJI_ALS', "⚔️")
+    AG = os.getenv('EMOJI_AG', "👻")
+    AC = os.getenv('EMOJI_AC', "🗡️")
+    UTD = os.getenv('EMOJI_UTD', "🌍")
+    AV = os.getenv('EMOJI_AV', "🛡️")
+    BL = os.getenv('EMOJI_BL', "💫")
+    SP = os.getenv('EMOJI_SP', "⛵")
+    ARX = os.getenv('EMOJI_ARX', "🔥")
+    ASTD = os.getenv('EMOJI_ASTD', "⭐")
+    AOL = os.getenv('EMOJI_AOL', "👑")
 
 class TicketControlView(discord.ui.View):
     def __init__(self, user_id: int, game: str):
@@ -82,8 +61,10 @@ class TicketControlView(discord.ui.View):
             if isinstance(item, discord.ui.Button):
                 item.custom_id = f"{item.custom_id}:{user_id}:{game}"
 
-    @discord.ui.button(label="✅ Vouch", style=discord.ButtonStyle.green, custom_id="vouch_button")
+    @discord.ui.button(label="Vouch", style=discord.ButtonStyle.green, custom_id="vouch_button")
     async def vouch_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Update label with emoji
+        button.label = f"{Emojis.SUCCESS} Vouch"
         # Parse state from custom_id if needed (for persistent view registration)
         _, user_id, game = interaction.data['custom_id'].split(':')
         user_id = int(user_id)
@@ -157,8 +138,10 @@ class TicketControlView(discord.ui.View):
                 # Send ONLY the PNG
                 await vouch_channel.send(file=file)
 
-    @discord.ui.button(label="🔒 Close Ticket", style=discord.ButtonStyle.red, custom_id="close_button")
+    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="close_button")
     async def close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Update label with emoji
+        button.label = f"{Emojis.LOCK} Close Ticket"
         # Parse state from custom_id
         _, user_id, game = interaction.data['custom_id'].split(':')
         user_id = int(user_id)
@@ -195,16 +178,16 @@ class ParadoxTicketView(discord.ui.View):
         custom_id="paradox_selector",
         placeholder="Select a game to start your ticket!",
         options=[
-            discord.SelectOption(label="Anime Last Stand (ALS)", emoji="⚔️", value="ALS"),
-            discord.SelectOption(label="Anime Guardians (AG)", emoji="👻", value="AG"),
-            discord.SelectOption(label="Anime Crusaders (AC)", emoji="🗡️", value="AC"),
-            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji="🌍", value="UTD"),
-            discord.SelectOption(label="Anime Vanguards (AV)", emoji="🛡️", value="AV"),
-            discord.SelectOption(label="Bizarre Lineage (BL)", emoji="💫", value="BL"),
-            discord.SelectOption(label="Sailor Piece (SP)", emoji="⛵", value="SP"),
-            discord.SelectOption(label="Anime Rangers X (ARX)", emoji="🔥", value="ARX"),
-            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji="⭐", value="ASTD"),
-            discord.SelectOption(label="Anime Overload (AOL)", emoji="👑", value="AOL"),
+            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ALS, value="ALS"),
+            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.AG, value="AG"),
+            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.AC, value="AC"),
+            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.UTD, value="UTD"),
+            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.AV, value="AV"),
+            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.BL, value="BL"),
+            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.SP, value="SP"),
+            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARX, value="ARX"),
+            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ASTD, value="ASTD"),
+            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.AOL, value="AOL"),
         ]
     )
     async def callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -281,16 +264,16 @@ class HelperApplicationView(discord.ui.View):
         custom_id="helper_selector",
         placeholder="Select your specialty!",
         options=[
-            discord.SelectOption(label="Anime Last Stand (ALS)", emoji="⚔️", value="ALS"),
-            discord.SelectOption(label="Anime Guardians (AG)", emoji="👻", value="AG"),
-            discord.SelectOption(label="Anime Crusaders (AC)", emoji="🗡️", value="AC"),
-            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji="🌍", value="UTD"),
-            discord.SelectOption(label="Anime Vanguards (AV)", emoji="🛡️", value="AV"),
-            discord.SelectOption(label="Bizarre Lineage (BL)", emoji="💫", value="BL"),
-            discord.SelectOption(label="Sailor Piece (SP)", emoji="⛵", value="SP"),
-            discord.SelectOption(label="Anime Rangers X (ARX)", emoji="🔥", value="ARX"),
-            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji="⭐", value="ASTD"),
-            discord.SelectOption(label="Anime Overload (AOL)", emoji="👑", value="AOL"),
+            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ALS, value="ALS"),
+            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.AG, value="AG"),
+            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.AC, value="AC"),
+            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.UTD, value="UTD"),
+            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.AV, value="AV"),
+            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.BL, value="BL"),
+            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.SP, value="SP"),
+            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARX, value="ARX"),
+            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ASTD, value="ASTD"),
+            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.AOL, value="AOL"),
         ]
     )
     async def callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -340,9 +323,6 @@ class ParadoxBot(commands.Bot):
 
     async def on_ready(self):
         print(f"✅ Bot logged in as {self.user}")
-        # Resolve custom emojis
-        Emojis.update(self)
-        print("✨ Custom emojis resolved.")
 
 
 bot = ParadoxBot()
