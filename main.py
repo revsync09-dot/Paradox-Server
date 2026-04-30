@@ -57,11 +57,15 @@ class Emojis:
                 continue
                 
             if val.isdigit():
-                emoji_obj = bot.get_emoji(int(val))
+                emoji_id = int(val)
+                emoji_obj = bot.get_emoji(emoji_id)
                 if emoji_obj:
                     setattr(cls, key, emoji_obj)
                 else:
-                    setattr(cls, key, discord.PartialEmoji(name="emoji", id=int(val)))
+                    # If not in cache, we don't know if it's animated. 
+                    # We'll assume static for now, but str() on PartialEmoji 
+                    # will at least try to render.
+                    setattr(cls, key, discord.PartialEmoji(name="p", id=emoji_id, animated=False))
             else:
                 setattr(cls, key, val)
 
@@ -385,6 +389,13 @@ async def profile(ctx, target: discord.Member = None):
         img_data = await create_profile_card(target.name, total_vouches, game_count, target.display_avatar.url)
         file = discord.File(img_data, filename="profile.png")
         await ctx.send(file=file)
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def sync(ctx):
+    """Refreshes the emoji cache"""
+    Emojis.update(bot)
+    await ctx.send("✅ Emojis have been refreshed from cache!")
 
 if __name__ == "__main__":
     if not TOKEN:
