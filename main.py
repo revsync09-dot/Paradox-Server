@@ -178,16 +178,16 @@ class ParadoxTicketView(discord.ui.View):
         custom_id="paradox_selector",
         placeholder="Select a game to start your ticket!",
         options=[
-            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ALS, value="ALS"),
-            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.AG, value="AG"),
-            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.AC, value="AC"),
-            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.UTD, value="UTD"),
-            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.AV, value="AV"),
-            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.BL, value="BL"),
-            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.SP, value="SP"),
-            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARX, value="ARX"),
-            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ASTD, value="ASTD"),
-            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.AOL, value="AOL"),
+            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ARROW, value="ALS"),
+            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.ARROW, value="AG"),
+            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.ARROW, value="AC"),
+            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.ARROW, value="UTD"),
+            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.ARROW, value="AV"),
+            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.ARROW, value="BL"),
+            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.ARROW, value="SP"),
+            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARROW, value="ARX"),
+            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ARROW, value="ASTD"),
+            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.ARROW, value="AOL"),
         ]
     )
     async def callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -264,16 +264,16 @@ class HelperApplicationView(discord.ui.View):
         custom_id="helper_selector",
         placeholder="Select your specialty!",
         options=[
-            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ALS, value="ALS"),
-            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.AG, value="AG"),
-            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.AC, value="AC"),
-            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.UTD, value="UTD"),
-            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.AV, value="AV"),
-            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.BL, value="BL"),
-            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.SP, value="SP"),
-            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARX, value="ARX"),
-            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ASTD, value="ASTD"),
-            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.AOL, value="AOL"),
+            discord.SelectOption(label="Anime Last Stand (ALS)", emoji=Emojis.ARROW, value="ALS"),
+            discord.SelectOption(label="Anime Guardians (AG)", emoji=Emojis.ARROW, value="AG"),
+            discord.SelectOption(label="Anime Crusaders (AC)", emoji=Emojis.ARROW, value="AC"),
+            discord.SelectOption(label="Universal Tower Defense (UTD)", emoji=Emojis.ARROW, value="UTD"),
+            discord.SelectOption(label="Anime Vanguards (AV)", emoji=Emojis.ARROW, value="AV"),
+            discord.SelectOption(label="Bizarre Lineage (BL)", emoji=Emojis.ARROW, value="BL"),
+            discord.SelectOption(label="Sailor Piece (SP)", emoji=Emojis.ARROW, value="SP"),
+            discord.SelectOption(label="Anime Rangers X (ARX)", emoji=Emojis.ARROW, value="ARX"),
+            discord.SelectOption(label="All Star Tower Defense (ASTD)", emoji=Emojis.ARROW, value="ASTD"),
+            discord.SelectOption(label="Anime Overload (AOL)", emoji=Emojis.ARROW, value="AOL"),
         ]
     )
     async def callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -343,36 +343,28 @@ async def setup(ctx):
     if os.path.exists("assets/setup_header.png"):
         file = discord.File("assets/setup_header.png", filename="header.png")
 
-    embed = V2Embed(
-        title=f"{Emojis.CARRY} PARADOX | Carry Requests"
-    )
-    
-    if file:
-        embed.set_image(url="attachment://header.png")
+    embed = V2Embed()
     
     embed.description = (
-        f"{Emojis.ARROW} **Welcome to the Elite Carry Service!**\n"
-        "Your reliable place for fast and professional anime carries.\n\n"
-        f"{Emojis.INFO} **How It Works**\n"
-        "1. Select your game from the dropdown below.\n"
-        "2. A private ticket will be created for you.\n"
-        "3. A booster will assist you shortly.\n"
-        "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
-    )
-
-    embed.add_field(
-        name=f"{Emojis.SUCCESS} FREE SERVICE",
-        value="We help you complete runs for free — no hidden fees.",
-        inline=True
-    )
-    
-    embed.add_field(
-        name=f"{Emojis.VOUCH} REPUTATION",
-        value="Boosters earn trust through your feedback.",
-        inline=True
+        f"**@everyone**\n\n"
+        f"**{Emojis.CARRY} [ PARADOX CARRY REQUESTS ]**\n\n"
+        f"**| {Emojis.INFO} Information**\n"
+        f"**| Welcome to the Elite Carry Service!**\n"
+        f"**| Your place for fast and professional carries.**\n\n"
+        f"**| {Emojis.GAME} Supported Games**\n"
+        "```diff\n"
+        "+ Anime Last Stand (ALS)\n"
+        "+ Anime Vanguards (AV)\n"
+        "+ All Star Tower Defense (ASTD)\n"
+        "+ Anime Rangers X (ARX)\n"
+        "+ and many more...\n"
+        "```\n"
+        f"**| {Emojis.ARROW} How to start?**\n"
+        f"**| Select your game from the menu below!**\n\n"
+        f"**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**"
     )
     
-    embed.set_footer(text="PARADOX • Quality Carry Service", icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
+    embed.set_footer(text="Paradox System • Premium Edition", icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
     
     if file:
         await ctx.send(file=file, embed=embed, view=ParadoxTicketView())
@@ -384,24 +376,27 @@ async def setup(ctx):
 @commands.has_permissions(administrator=True)
 async def helper_setup(ctx):
     """Creates the helper application system embed"""
-    embed = V2Embed(
-        title=f"{Emojis.STAFF} PARADOX | Helper Applications",
-        description="We are always looking for skilled boosters to join our team!"
+    embed = V2Embed()
+    
+    embed.description = (
+        f"**@everyone**\n\n"
+        f"**{Emojis.STAFF} [ HELPER APPLICATIONS ]**\n\n"
+        f"**| {Emojis.INFO} Requirements**\n"
+        f"**| Must have meta units and high activity.**\n"
+        f"**| Polite and professional attitude is required.**\n\n"
+        f"**| {Emojis.SUCCESS} Benefits**\n"
+        "```diff\n"
+        "+ Gain community trust\n"
+        "+ Build your reputation\n"
+        "+ Access to exclusive staff channels\n"
+        "+ Rank up in the Hall of Fame\n"
+        "```\n"
+        f"**| {Emojis.ARROW} How to apply?**\n"
+        f"**| Select your specialty from the menu below!**\n\n"
+        f"**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**"
     )
     
-    embed.add_field(
-        name=f"{Emojis.ARROW} WHY JOIN US?",
-        value="• Build your reputation\n• Help the community\n• Professional team",
-        inline=True
-    )
-    
-    embed.add_field(
-        name=f"{Emojis.INFO} REQUIREMENTS",
-        value="• Game experience\n• Clean record\n• Polite attitude",
-        inline=True
-    )
-    
-    embed.set_footer(text="Select your specialty below to apply!")
+    embed.set_footer(text="Paradox Recruitment • Apply Now")
     
     await ctx.send(embed=embed, view=HelperApplicationView())
 
